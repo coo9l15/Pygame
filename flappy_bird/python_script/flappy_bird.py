@@ -1,5 +1,7 @@
 import pygame
 import sys
+import time
+import threading
 
 class Essentials:
     def __init__(self):
@@ -14,59 +16,76 @@ class Essentials:
         # Dictionary to hold image paths and dimensions
         self.image_configs = {
             "flappy_bird": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/flappy_bird.png", "width": 80, "height": 40},
-            "background": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/background.png", "width": 600, "height": 400}
-            # Add more images and their dimensions here
+            "background": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/background.jpg", "width": 1200, "height": 400}  # Ensure this width is >= 2 * screen_width
         }
         
         self.images = {}
         self.load_images()
+        
+        # Initialize background scrolling variables and bird 'y' position
+        self.flappy_y = 100
+        self.bg_x = 0
+        self.bg_speed = 0.5
 
     def load_images(self):
         for key, config in self.image_configs.items():
-            try:
-                original_image = pygame.image.load(config["path"])
-                scaled_image = pygame.transform.scale(original_image, (config["width"], config["height"]))
-                self.images[key] = scaled_image
-                if key == "flappy_bird":
-                    pygame.display.set_icon(scaled_image)  # Set the icon of the window for flappy_bird
-                print(f"Image '{key}' loaded and scaled successfully")
-                print("Image size after scaling:", scaled_image.get_size())
-            except pygame.error as e:
-                print(f"Unable to load image at {config['path']}: {e}")
-                self.images[key] = None
+            image = pygame.image.load(config["path"])
+            image = pygame.transform.scale(image, (config["width"], config["height"]))
+            self.images[key] = image
 
-class Game:
-    def __init__(self, essentials):
-        self.essentials = essentials
+class FlappyBirdGame:
+    def __init__(self):
+        self.essentials = Essentials()
+
+    def set_bg_speed(self, speed):
+        # Set the speed of the background scrolling.
+        self.essentials.bg_speed = speed
+
+    def repeat(self):
+        times = 0
+        while times < 20:
+            self.essentials.flappy_y -= 2
+            times += 1
+            time.sleep(0.01)
 
     def main(self):
         while self.essentials.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.essentials.running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        # Move Flappy Bird up when spacebar is pressed
+                        threading.Thread(target=self.repeat).start()
 
-            self.essentials.screen.fill((0, 0, 0))  # Fill the screen with black
-            
-            # Draw all images
-            positions = {
-                "flappy_bird": (50, 50),  # Example position
-                "background": (0, 0)      # Example position
-                # Add more positions as needed
-            }
-            
-            for key, pos in positions.items():
-                if key in self.essentials.images and self.essentials.images[key] is not None:
-                    self.essentials.screen.blit(self.essentials.images[key], pos)
-                else:
-                    print(f"Image '{key}' not found in images dictionary")
+            # Update background position
+            self.essentials.flappy_y += 1  # Make Flappy Bird fall down
+            self.essentials.bg_x -= self.essentials.bg_speed
 
-            pygame.display.flip()  # Use flip for complete screen update
+            # Reset background position when it moves off-screen
+            bg_image = self.essentials.images["background"]
+            bg_width = bg_image.get_width()
+            if self.essentials.bg_x <= -bg_width:
+                self.essentials.bg_x = 0
+
+            # Draw background twice side by side
+            self.essentials.screen.blit(bg_image, (int(self.essentials.bg_x), 0))
+            self.essentials.screen.blit(bg_image, (int(self.essentials.bg_x + bg_width), 0))
+            
+            # Draw Flappy Bird
+            flappy_image = self.essentials.images["flappy_bird"]
+            self.essentials.screen.blit(flappy_image, (50, self.essentials.flappy_y))
+            
+            pygame.display.flip()
             self.essentials.clock.tick(60)
 
-        pygame.quit()
-        sys.exit()
+# Initialize pygame
+pygame.init()
 
-if __name__ == "__main__":
-    essentials = Essentials()
-    game = Game(essentials)
-    game.main()
+# Create game instance and run main loop
+game = FlappyBirdGame()
+game.main()
+
+# Quit pygame
+pygame.quit()
+sys.exit()
