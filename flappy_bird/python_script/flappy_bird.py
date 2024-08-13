@@ -79,8 +79,8 @@ class FlappyBirdGame:
             self.essentials.flappy_angle = max(self.essentials.flappy_angle - rotation_speed, target_angle)
 
         # Prevent the bird from going off the screen with padding
-        padding = 10  # Padding to avoid immediate game over when near edges
-        if self.essentials.flappy_y > self.essentials.screen_height - padding or self.essentials.flappy_y < padding:
+        padding = 20  # Padding to avoid immediate game over when near edges
+        if self.essentials.flappy_y > self.essentials.screen_height - padding or self.essentials.flappy_y < -padding:
             self.end_game()
 
         # Decrease jump cooldown
