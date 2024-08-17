@@ -8,6 +8,7 @@ class Essentials:
         self.screen_height = 900
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Flappy Bird")
+        pygame.display.set_icon(pygame.image.load("/Users/Avee/Documents/Pygame/flappy_bird/images/flappy_bird.png"))
         self.clock = pygame.time.Clock()
         self.running = True
         
