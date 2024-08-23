@@ -10,3 +10,4 @@ __pycache__/
 
 # Ignore log files
 *.log
+flappy_bird/python_script/essentials.py

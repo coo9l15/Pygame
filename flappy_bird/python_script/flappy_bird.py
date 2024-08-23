@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import csv
 
 class Pipe:
     def __init__(self, image, x, gap_height):
@@ -15,7 +16,6 @@ class Pipe:
         # Create masks for collision detection
         self.mask_top = pygame.mask.from_surface(pygame.transform.flip(self.image, False, True))
         self.mask_bottom = pygame.mask.from_surface(self.image)
-
 
     def draw(self, screen):
         # Draw the top pipe (flipped vertically)
@@ -86,7 +86,60 @@ class FlappyBirdGame:
         self.score = 0
         # Create mask for the bird
         self.bird_mask = pygame.mask.from_surface(self.essentials.images["flappy_bird"])
+
+    def show_stats(self):
+        try:
+            with open("flappy_bird/stats.csv", "r") as file:
+                reader = csv.reader(file)
+                stats = list(reader)
+            for stat in stats:
+                self.essentials.font.render(stat, True, (255, 255, 255))
+        except FileNotFoundError:
+            self.essentials.font.render("No stats available", True, (255, 255, 255))
+        except Exception as e:
+            self.essentials.font.render(f"An error occurred: {e}", True, (255, 255, 255))
     
+    def home(self):
+        while self.essentials.running:
+            self.draw(game=False)
+            # Scale the bird image
+            scaled_bird = pygame.transform.scale(self.essentials.images["flappy_bird"], (800, 800))
+
+            # Draw the bird with a 45-degree upward tilt
+            rotated_bird = pygame.transform.rotate(scaled_bird, 45)
+            bird_x = self.essentials.screen_width // 2 - rotated_bird.get_width() // 2
+            bird_y = (self.essentials.screen_height // 2 - rotated_bird.get_height()) // 2 + 100
+            self.essentials.screen.blit(rotated_bird, (bird_x, bird_y))
+
+            try_again_button = self.essentials.images["try_again_button"]
+            play_button_x = (self.essentials.screen_width // 2 - try_again_button.get_width() // 2) + 400
+            play_button_y = (self.essentials.screen_height // 2) + 100
+            stats_button_x = (self.essentials.screen_width // 2 - try_again_button.get_width() // 2) - 400
+            stats_button_y = (self.essentials.screen_height // 2) + 100
+
+            # Define buttons
+            self.essentials.run_button = pygame.Rect(play_button_x, play_button_y, try_again_button.get_width(), try_again_button.get_height())
+            self.essentials.stats_button = pygame.Rect(stats_button_x, stats_button_y, try_again_button.get_width(), try_again_button.get_height())
+
+            # Blit buttons
+            self.essentials.screen.blit(try_again_button, (play_button_x, play_button_y))
+            self.essentials.screen.blit(try_again_button, (stats_button_x, stats_button_y))
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.essentials.running = False
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    if self.essentials.run_button.collidepoint(mouse_pos):
+                        self.run()
+                    elif self.essentials.stats_button.collidepoint(mouse_pos):
+                        self.show_stats()
+
+            pygame.display.flip()
+            self.essentials.clock.tick(60)
+
     def end_game(self):
         self.essentials.screen.fill((0, 0, 0))
         final_score = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
@@ -135,7 +188,6 @@ class FlappyBirdGame:
         new_pipe = Pipe(pipe_image, self.essentials.screen_width, self.gap_height)
         self.pipes.append(new_pipe)
 
-
     def update_pipes(self):
         for pipe in self.pipes:
             pipe.x -= self.pipe_speed
@@ -175,7 +227,7 @@ class FlappyBirdGame:
         if self.jump_cooldown > 0:
             self.jump_cooldown -= 1
 
-    def draw(self):
+    def draw(self, game=False):
         # Scroll the background
         self.essentials.bg_x -= self.essentials.bg_speed
         if self.essentials.bg_x <= -self.essentials.images["background"].get_width():
@@ -185,17 +237,18 @@ class FlappyBirdGame:
         self.essentials.screen.blit(self.essentials.images["background"], (self.essentials.bg_x, 0))
         self.essentials.screen.blit(self.essentials.images["background"], (self.essentials.bg_x + self.essentials.images["background"].get_width(), 0))
 
-        # Draw the bird with its current rotation
-        rotated_bird = pygame.transform.rotate(self.essentials.images["flappy_bird"], self.essentials.flappy_angle)
-        self.essentials.screen.blit(rotated_bird, (50, self.essentials.flappy_y))
+        if game:
+            # Draw the bird with its current rotation
+            rotated_bird = pygame.transform.rotate(self.essentials.images["flappy_bird"], self.essentials.flappy_angle)
+            self.essentials.screen.blit(rotated_bird, (50, self.essentials.flappy_y))
 
-        # Draw pipes
-        for pipe in self.pipes:
-            pipe.draw(self.essentials.screen)
+            # Draw pipes
+            for pipe in self.pipes:
+                pipe.draw(self.essentials.screen)
 
-        # Draw the score
-        score_text = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
-        self.essentials.screen.blit(score_text, (10, 10))
+            # Draw the score
+            score_text = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
+            self.essentials.screen.blit(score_text, (10, 10))
 
     def run(self):
         while self.essentials.running:
@@ -228,7 +281,7 @@ class FlappyBirdGame:
                     # Bird has passed the pipe successfully
                     self.score += 1
 
-            self.draw()
+            self.draw(game=True)
 
             # Refresh the screen
             pygame.display.flip()
@@ -240,4 +293,4 @@ class FlappyBirdGame:
 
 if __name__ == "__main__":
     game = FlappyBirdGame()
-    game.run()
+    game.home()
