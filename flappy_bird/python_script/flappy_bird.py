@@ -2,6 +2,7 @@ import pygame
 import random
 import json
 import sys
+import os
 
 """
 This game is a remake of the flappy bird game!
@@ -46,15 +47,18 @@ class Essentials:
         pygame.display.set_icon(pygame.image.load("/Users/Avee/Documents/Pygame/flappy_bird/images/flappy_bird.png"))
         self.clock = pygame.time.Clock()
         self.running = True
+
+        # Define the base path
+        self.base_path = os.path.dirname(os.path.abspath(__file__))
         
         # Dictionary to hold image paths and dimensions
         self.image_configs = {
-            "flappy_bird": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/flappy_bird.png", "width": 160, "height": 120},
-            "background": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/background.jpg", "width": self.screen_width, "height": self.screen_height},
-            "font": {"path": "flappy_bird/images/minecraftia/Minecraftia-Regular.ttf"},
-            "try_again_button": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/try_again_button.png", "width": 500, "height": 300},
-            "pipes": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/pipes.png", "width": 200, "height": 800},
-            "next": {"path": "/Users/Avee/Documents/Pygame/flappy_bird/images/next.png", "width": 400, "height": 400}
+            "flappy_bird": {"path": os.path.join(self.base_path, "../images/flappy_bird.png"), "width": 160, "height": 120},
+            "background": {"path": os.path.join(self.base_path, "../images/background.jpg"), "width": self.screen_width, "height": self.screen_height},
+            "font": {"path": os.path.join(self.base_path, "../images/minecraftia/Minecraftia-Regular.ttf")},
+            "try_again_button": {"path": os.path.join(self.base_path, "../images/try_again_button.png"), "width": 500, "height": 300},
+            "pipes": {"path": os.path.join(self.base_path, "../images/pipes.png"), "width": 200, "height": 800},
+            "next": {"path": os.path.join(self.base_path, "../images/next.png"), "width": 400, "height": 400}
         }
 
         self.images = {}
@@ -72,6 +76,7 @@ class Essentials:
 
     def load_images(self):
         for key, config in self.image_configs.items():
+            print(f"Loading {key} from {config['path']}")  # Debugging statement
             if key == "font":
                 self.font = pygame.font.Font(config["path"], 60)  # Load the font
             else:
@@ -113,44 +118,55 @@ class FlappyBirdGame:
         self.essentials.running = True  
 
     def show_stats(self):
+        limit = 10
         self.essentials.screen.fill((0, 0, 0))  # Clear the screen
         while self.essentials.running:
             try:
                 with open("/Users/Avee/Documents/Pygame/flappy_bird/python_script/scores.json", "r") as file:
-                    data = dict(sorted(json.load(file),reverse=True))
-                    while True:
-                        # Code to display the stats
-                        count = 1
-                        stat = self.essentials.font.render(f"Score: {data.get(count)}", True, (255, 255, 255))
-                        self.essentials.screen.blit(stat, (50, 100))
-                        # Draw the "Try Again" button and arrow
-                        try_again_button = self.essentials.images["try_again_button"]
-                        next_arrow = self.essentials.images["next"]
-                        button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
-                        button_y = self.essentials.screen_height // 2 + 100
-                        self.essentials.button = pygame.Rect(button_x, button_y, try_again_button.get_width(), try_again_button.get_height())
-                        self.essentials.screen.blit(try_again_button, (button_x, button_y))
-                        self.essentials.screen.blit(next_arrow, (self.essentials.screen_width - next_arrow.get_width() - 50, self.essentials.screen_height - next_arrow.get_height() - 50))
+                    try:
+                        stats = dict(json.load(file))
+                        if not stats:
+                            raise ValueError("No stats available")
+                    except json.JSONDecodeError:
+                        raise ValueError("Error reading stats")
 
-                        while True:
-                            for event in pygame.event.get():
-                                if event.type == pygame.QUIT:
-                                    self.essentials.running = False
-                                    return
-                                elif event.type == pygame.MOUSEBUTTONDOWN:
-                                    mouse_pos = pygame.mouse.get_pos()
-                                    print(f"Mouse clicked at: {mouse_pos}")  # Debugging statement
-                                    if self.essentials.button.collidepoint(mouse_pos):
-                                        print("Try Again button clicked")  # Debugging statement
-                                        self.home()
-                                    elif self.next_arrow.collidepoint(mouse_pos):
-                                        self.run()
+                count = 0
+                distance = 0
+                stat = self.essentials.font.render(f"{count}: {stats.get(count)} stats", True, (255, 255, 255))
+                self.essentials.screen.blit(stat, (50, 50))
 
-                            pygame.display.flip()
-                            self.essentials.clock.tick(60)
+                # Draw the "Try Again" button and arrow
+                try_again_button = self.essentials.images["try_again_button"]
+                next_arrow = self.essentials.images["next"]
+                button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
+                button_y = self.essentials.screen_height // 2 + 100
+                self.essentials.button = pygame.Rect(button_x, button_y, try_again_button.get_width(), try_again_button.get_height())
 
-            except FileNotFoundError:
-                no_stats_text = self.essentials.font.render("No stats available", True, (255, 255, 255))
+                print(f"Drawing button at position: ({button_x}, {button_y})")  # Debugging statement
+
+                self.essentials.screen.blit(try_again_button, (button_x, button_y))
+                self.essentials.screen.blit(next_arrow, (self.essentials.screen_width - next_arrow.get_width() - 50, self.essentials.screen_height - next_arrow.get_height() - 50))
+
+                while True:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            self.essentials.running = False
+                            return
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_pos = pygame.mouse.get_pos()
+                            print(f"Mouse clicked at: {mouse_pos}")  # Debugging statement
+                            if self.essentials.button.collidepoint(mouse_pos):
+                                print("Try Again button clicked")  # Debugging statement
+                                self.reset_game()  # Reset the game
+                                self.home()
+                            elif self.next_arrow.collidepoint(mouse_pos):
+                                self.run()
+
+                    pygame.display.flip()
+                    self.essentials.clock.tick(60)
+
+            except (FileNotFoundError, ValueError) as e:
+                no_stats_text = self.essentials.font.render(str(e), True, (255, 255, 255))
                 self.essentials.screen.blit(no_stats_text, (50, 50))
                 self.essentials.screen.blit(self.essentials.images["try_again_button"], self.essentials.button)
                 while True:
@@ -163,23 +179,11 @@ class FlappyBirdGame:
                             print(f"Mouse clicked at: {mouse_pos}")  # Debugging statement
                             if self.essentials.button.collidepoint(mouse_pos):
                                 print("Try Again button clicked")  # Debugging statement
+                                self.reset_game()  # Reset the game
                                 self.home()
+
                     pygame.display.flip()
                     self.essentials.clock.tick(60)
-            except json.JSONDecodeError:
-                self.essentials.screen.fill((0, 0, 0))
-                no_stats_text = self.essentials.font.render("No stats available", True, (255, 255, 255))
-                self.essentials.screen.blit(no_stats_text, (50, 50))
-                self.essentials.screen.blit(self.essentials.images["try_again_button"], self.essentials.button)
-                while True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            self.essentials.running = False
-                            return
-                        elif event.type == pygame.MOUSEBUTTONDOWN:
-                            mouse_pos = pygame.mouse.get_pos()
-                            if self.essentials.button.collidepoint(mouse_pos):
-                                self.home()
 
     def home(self):
         while self.essentials.running:
@@ -329,9 +333,6 @@ class FlappyBirdGame:
     def run(self):
         increase = 10
         while self.essentials.running:
-            if self.score == increase:
-                self.pipe_speed += 1
-                increase += 10
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.essentials.running = False
