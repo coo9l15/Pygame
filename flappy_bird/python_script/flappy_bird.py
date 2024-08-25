@@ -31,6 +31,12 @@ class Pipe:
         # Draw the bottom pipe
         screen.blit(self.image, (self.x, self.bottom_y))
 
+    def update(self, speed):
+        self.x -= speed
+
+    def is_off_screen(self):
+        return self.x + self.image.get_width() < 0
+
     def get_masks(self):
         top_pipe_pos = (self.x, self.top_height - self.image.get_height())
         bottom_pipe_pos = (self.x, self.bottom_y)
@@ -41,7 +47,7 @@ class Essentials:
     def __init__(self):
         pygame.init()
         self.screen_width = 1400
-        self.screen_height = 900
+        self.screen_height = 850
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Flappy Bird")
         pygame.display.set_icon(pygame.image.load("/Users/Avee/Documents/Pygame/flappy_bird/images/flappy_bird.png"))
@@ -76,7 +82,6 @@ class Essentials:
 
     def load_images(self):
         for key, config in self.image_configs.items():
-            print(f"Loading {key} from {config['path']}")  # Debugging statement
             if key == "font":
                 self.font = pygame.font.Font(config["path"], 60)  # Load the font
             else:
@@ -116,76 +121,140 @@ class FlappyBirdGame:
         # Reset any other relevant game state variables
         self.essentials.bg_x = 0
         self.essentials.running = True  
+        self.flappy_velocity = 0
 
     def show_stats(self):
-        limit = 10
         self.essentials.screen.fill((0, 0, 0))  # Clear the screen
-        while self.essentials.running:
-            try:
-                with open("/Users/Avee/Documents/Pygame/flappy_bird/python_script/scores.json", "r") as file:
-                    try:
-                        stats = dict(json.load(file))
-                        if not stats:
-                            raise ValueError("No stats available")
-                    except json.JSONDecodeError:
-                        raise ValueError("Error reading stats")
+        try:
+            with open("/Users/Avee/Documents/Pygame/flappy_bird/python_script/scores.json", "r") as file:
+                stats = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            no_stats_text = self.essentials.font.render(str(e), True, (255, 255, 255))
+            self.essentials.screen.blit(no_stats_text, (50, 50))
+            self.essentials.screen.blit(self.essentials.images["try_again_button"], self.essentials.button)
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.essentials.running = False
+                        pygame.quit()
+                        sys.exit()
+                pygame.display.flip()
+                self.essentials.clock.tick(60)
+            return
 
-                count = 0
-                distance = 0
-                stat = self.essentials.font.render(f"{count}: {stats.get(count)} stats", True, (255, 255, 255))
-                self.essentials.screen.blit(stat, (50, 50))
+        stats_list = list(stats.items())
+        current_index = 0
+        limit = len(stats_list)
 
-                # Draw the "Try Again" button and arrow
-                try_again_button = self.essentials.images["try_again_button"]
-                next_arrow = self.essentials.images["next"]
-                button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
-                button_y = self.essentials.screen_height // 2 + 100
-                self.essentials.button = pygame.Rect(button_x, button_y, try_again_button.get_width(), try_again_button.get_height())
+        try_again_button = self.essentials.images["try_again_button"]
+        next_arrow = self.essentials.images["next"]
+        back_arrow = pygame.transform.rotate(next_arrow, 180)
+        
+        button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
+        button_y = self.essentials.screen_height // 2 + 100
+        self.essentials.button = pygame.Rect(button_x, button_y, try_again_button.get_width(), try_again_button.get_height())
 
-                print(f"Drawing button at position: ({button_x}, {button_y})")  # Debugging statement
+        next_arrow_x = self.essentials.screen_width - next_arrow.get_width() - 50
+        next_arrow_y = self.essentials.screen_height - next_arrow.get_height() - 50
+        next_arrow_rect = pygame.Rect(next_arrow_x, next_arrow_y, next_arrow.get_width(), next_arrow.get_height())
 
-                self.essentials.screen.blit(try_again_button, (button_x, button_y))
-                self.essentials.screen.blit(next_arrow, (self.essentials.screen_width - next_arrow.get_width() - 50, self.essentials.screen_height - next_arrow.get_height() - 50))
+        back_arrow_x = 50
+        back_arrow_y = self.essentials.screen_height - back_arrow.get_height() - 50
+        back_arrow_rect = pygame.Rect(back_arrow_x, back_arrow_y, back_arrow.get_width(), back_arrow.get_height())
 
-                while True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            self.essentials.running = False
-                            return
-                        elif event.type == pygame.MOUSEBUTTONDOWN:
-                            mouse_pos = pygame.mouse.get_pos()
-                            print(f"Mouse clicked at: {mouse_pos}")  # Debugging statement
-                            if self.essentials.button.collidepoint(mouse_pos):
-                                print("Try Again button clicked")  # Debugging statement
-                                self.reset_game()  # Reset the game
-                                self.home()
-                            elif self.next_arrow.collidepoint(mouse_pos):
-                                self.run()
+        # Render the "Return" text
+        return_text = self.essentials.font.render("Return", True, (255, 255, 255))
+        return_text_rect = return_text.get_rect(center=self.essentials.button.center)
 
-                    pygame.display.flip()
-                    self.essentials.clock.tick(60)
+        self.essentials.screen.blit(try_again_button, (button_x, button_y))
+        self.essentials.screen.blit(return_text, return_text_rect)
+        if current_index < limit - 1:
+            self.essentials.screen.blit(next_arrow, (next_arrow_x, next_arrow_y))
+        if current_index > 0:
+            self.essentials.screen.blit(back_arrow, (back_arrow_x, back_arrow_y))
 
-            except (FileNotFoundError, ValueError) as e:
-                no_stats_text = self.essentials.font.render(str(e), True, (255, 255, 255))
-                self.essentials.screen.blit(no_stats_text, (50, 50))
-                self.essentials.screen.blit(self.essentials.images["try_again_button"], self.essentials.button)
-                while True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            self.essentials.running = False
-                            return
-                        elif event.type == pygame.MOUSEBUTTONDOWN:
-                            mouse_pos = pygame.mouse.get_pos()
-                            print(f"Mouse clicked at: {mouse_pos}")  # Debugging statement
-                            if self.essentials.button.collidepoint(mouse_pos):
-                                print("Try Again button clicked")  # Debugging statement
-                                self.reset_game()  # Reset the game
-                                self.home()
+        while True:
+            self.essentials.screen.fill((0, 0, 0))  # Clear the screen
 
-                    pygame.display.flip()
-                    self.essentials.clock.tick(60)
+            # Render and display the current stat
+            key, value = stats_list[current_index]
+            stat = self.essentials.font.render(f"{key}: {value}", True, (255, 255, 255))
+            self.essentials.screen.blit(stat, (50, 50))
 
+            # Draw the buttons on the screen
+            self.essentials.screen.blit(try_again_button, (self.essentials.button.x, self.essentials.button.y))
+            self.essentials.screen.blit(return_text, return_text_rect)
+            if current_index < limit - 1:
+                self.essentials.screen.blit(next_arrow, (next_arrow_rect.x, next_arrow_rect.y))
+            if current_index > 0:
+                self.essentials.screen.blit(back_arrow, (back_arrow_rect.x, back_arrow_rect.y))
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.essentials.running = False
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    if self.essentials.button.collidepoint(mouse_pos):
+                        self.reset_game()  # Reset the game
+                        self.home()
+                    elif next_arrow_rect.collidepoint(mouse_pos) and current_index < limit - 1:
+                        current_index += 1
+                    elif back_arrow_rect.collidepoint(mouse_pos) and current_index > 0:
+                        current_index -= 1
+
+            pygame.display.flip()
+            self.essentials.clock.tick(60)
+
+    def end_game(self):
+        try:
+            with open("/Users/Avee/Documents/Pygame/flappy_bird/python_script/scores.json", "r") as file:
+                try:
+                    stats = json.load(file)
+                except json.JSONDecodeError:
+                    stats = {}
+        except FileNotFoundError:
+            stats = {}
+
+        new_entry = {str(len(stats) + 1): self.score}
+        stats.update(new_entry)
+
+        with open("/Users/Avee/Documents/Pygame/flappy_bird/python_script/scores.json", "w") as file:
+            json.dump(stats, file, indent=4)
+
+        self.essentials.screen.fill((0, 0, 0))
+        final_score = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
+        game_over = self.essentials.font.render("Game Over", True, (255, 255, 255))
+        try_again = self.essentials.font.render("Home", True, (255, 255, 255))
+        try_again_button = self.essentials.images["try_again_button"]
+    
+        # Calculate positions
+        button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
+        button_y = self.essentials.screen_height // 2
+        text_x = button_x + (try_again_button.get_width() - try_again.get_width()) // 2
+        text_y = button_y + (try_again_button.get_height() - try_again.get_height()) // 2
+    
+        # Blit elements to the screen
+        self.essentials.screen.blit(final_score, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 200))
+        self.essentials.screen.blit(game_over, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 100))
+        self.essentials.screen.blit(try_again_button, (button_x, button_y))
+        self.essentials.screen.blit(try_again, (text_x, text_y))
+        
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.essentials.running = False
+                    return
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    if self.essentials.button.collidepoint(mouse_pos):
+                        self.home()
+            pygame.display.flip()
+            self.essentials.clock.tick(60)
+            
     def home(self):
+        scaled_font = pygame.font.Font(self.essentials.image_configs["font"]["path"], 100)
         while self.essentials.running:
             self.draw(game=False)
             # Scale the bird image
@@ -194,7 +263,9 @@ class FlappyBirdGame:
             # Draw the bird with a 45-degree upward tilt
             rotated_bird = pygame.transform.rotate(scaled_bird, 45)
             bird_x = self.essentials.screen_width // 2 - rotated_bird.get_width() // 2
-            bird_y = (self.essentials.screen_height // 2 - rotated_bird.get_height()) // 2 + 100
+            bird_y = (self.essentials.screen_height // 2 - rotated_bird.get_height()) // 2 - 80
+            title = scaled_font.render("Flappy Bird", True, (255, 255, 255))
+            self.essentials.screen.blit(title, (self.essentials.screen_width // 2 - 325, self.essentials.screen_height // 2 - 100))
             self.essentials.screen.blit(rotated_bird, (bird_x, bird_y))
 
             try_again_button = self.essentials.images["try_again_button"]
@@ -210,6 +281,18 @@ class FlappyBirdGame:
             # Blit buttons
             self.essentials.screen.blit(try_again_button, (play_button_x, play_button_y))
             self.essentials.screen.blit(try_again_button, (stats_button_x, stats_button_y))
+
+            # Render text
+            play_text = self.essentials.font.render("Play Again", True, (255, 255, 255))
+            stats_text = self.essentials.font.render("Stats", True, (255, 255, 255))
+
+            # Center text on buttons
+            play_text_rect = play_text.get_rect(center=self.essentials.run_button.center)
+            stats_text_rect = stats_text.get_rect(center=self.essentials.stats_button.center)
+
+            # Blit text
+            self.essentials.screen.blit(play_text, play_text_rect)
+            self.essentials.screen.blit(stats_text, stats_text_rect)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -270,10 +353,11 @@ class FlappyBirdGame:
 
     def update_pipes(self):
         for pipe in self.pipes:
-            pipe.x -= self.pipe_speed
+            pipe.update(self.pipe_speed)
 
         # Remove pipes that are off the screen
-        self.pipes = [pipe for pipe in self.pipes if pipe.x + pipe.image.get_width() > 0]
+        self.pipes = [pipe for pipe in self.pipes if not pipe.is_off_screen()]
+
 
     def apply_physics(self):
         # Apply gravity
@@ -312,20 +396,20 @@ class FlappyBirdGame:
         self.essentials.bg_x -= self.essentials.bg_speed
         if self.essentials.bg_x <= -self.essentials.images["background"].get_width():
             self.essentials.bg_x = 0
-
+    
         # Draw the scrolling background
         self.essentials.screen.blit(self.essentials.images["background"], (self.essentials.bg_x, 0))
         self.essentials.screen.blit(self.essentials.images["background"], (self.essentials.bg_x + self.essentials.images["background"].get_width(), 0))
-
+    
         if game:
             # Draw the bird with its current rotation
             rotated_bird = pygame.transform.rotate(self.essentials.images["flappy_bird"], self.essentials.flappy_angle)
             self.essentials.screen.blit(rotated_bird, (50, self.essentials.flappy_y))
-
+    
             # Draw pipes
             for pipe in self.pipes:
                 pipe.draw(self.essentials.screen)
-
+    
             # Draw the score
             score_text = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
             self.essentials.screen.blit(score_text, (10, 10))
