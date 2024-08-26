@@ -1,0 +1,82 @@
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Custom font */
+@font-face {
+    font-family: 'Minecraftia';
+    src: url('/Users/Avee/Documents/Pygame/flappy_bird/images/minecraftia/Minecraftia-Regular.ttf') format('truetype');
+}
+
+/* Body styling */
+body {
+    font-family: 'Minecraftia', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 20px;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background styling */
+.background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+}
+
+/* Content styling */
+.content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* Text and buttons container styling */
+.text-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 20px;
+}
+
+/* Heading styling */
+h1 {
+    color: black;
+    margin-bottom: 20px;
+}
+
+/* Button styling */
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.flappy_bird {
+    height: 240px; /* Increased height */
+    width: 320px;  /* Increased width */
+    transform: rotate(315deg); /* Tilt 45 degrees */
+    margin: 20px 0; /* Space around the image */
+}
