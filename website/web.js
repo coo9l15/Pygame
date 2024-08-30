@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const downloadLinks = {
         Windows: '/path/to/flappy_bird_windows.zip',
-        Mac: '/path/to/flappy_bird_mac.zip',
+        Mac: '/Users/Avee/Documents/Pygame/flappy_bird/images/try_again_button.png',
         Linux: '/path/to/flappy_bird_linux.zip'
     };
 
