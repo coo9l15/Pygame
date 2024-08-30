@@ -81,7 +81,7 @@ class Essentials:
         self.bg_x = 0
         self.bg_speed = 0.5
         self.gravity = 0.4  # Gravity value for smooth fall
-        self.jump_strength = -8  # Strength of the jump
+        self.jump_strength = -9  # Strength of the jump
         self.flappy_velocity = 0  # Velocity of the bird
         self.button = pygame.Rect(self.screen_width // 2 - 100, self.screen_height // 2 + 100, 200, 100)  # Center the button and set its dimensions
 
@@ -113,6 +113,7 @@ class FlappyBirdGame:
         threading.Thread(target=self.home_async).start()
 
     def home_async(self):
+        pygame.mixer.init()  # Initialize the mixer
         pygame.mixer.music.load(self.essentials.mp3s["background"])
         while True:
             if not pygame.mixer.music.get_busy():
@@ -199,7 +200,7 @@ class FlappyBirdGame:
         self.essentials.screen.fill((0, 0, 0))  # Clear the screen
         try:
             with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"), "r") as file:
-                stats = sorted(file.readlines(), reverse=True)
+                stats = int(file.readlines()).sort(reverse=True)
         except (FileNotFoundError) as e:
             os.mkdir(os.path.join(self.essentials.base_path, "../python_script/scores.txt"))
             while True:
@@ -548,7 +549,40 @@ class FlappyBirdGame:
             self.essentials.screen.blit(score_text, (10, 10))
 
     def run(self):
-        increase = 10
+        index = 3
+        TIME = 0
+
+        # Render the initial "Get Ready" message
+        get_ready = self.essentials.font.render(f"Get Ready {index}", True, (255, 255, 255))
+
+        # Main loop to display the "Get Ready" message and update the screen
+        while index != 0:
+            # Clear the screen and draw the background
+            self.essentials.screen.blit(self.essentials.images["background"], (0, 0))
+
+            # Draw the bird
+            self.essentials.screen.blit(self.essentials.images["flappy_bird"], (50, self.essentials.flappy_y))
+
+            # Draw the "Get Ready" message
+            get_ready = self.essentials.font.render(f"Get Ready {index}", True, (255, 255, 255))
+            self.essentials.screen.blit(get_ready, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 100))
+
+            # Update the display
+            pygame.display.flip()
+
+            # Wait for 1 second
+            pygame.time.wait(1000)
+
+            # Increment the time and index
+            TIME += 1000
+            if TIME % 1000 == 0:
+                index -= 1
+
+            # Tick the clock
+            self.essentials.clock.tick(60)
+
+        # Reset the game after the loop
+        self.reset_game()
         while self.essentials.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

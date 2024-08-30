@@ -1,82 +1,83 @@
-/* Basic reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Custom font */
 @font-face {
     font-family: 'Minecraftia';
-    src: url('/Users/Avee/Documents/Pygame/flappy_bird/images/minecraftia/Minecraftia-Regular.ttf') format('truetype');
+    src: url('../flappy_bird/images/minecraftia/Minecraftia-Regular.ttf') format('truetype');
 }
 
-/* Body styling */
 body {
-    font-family: 'Minecraftia', sans-serif;
-    background-color: #f0f0f0;
-    color: #333;
-    padding: 20px;
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
+    font-family: 'Minecraftia', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
 }
 
-/* Background styling */
 .background {
+    width: 100%;
+    height: 100%;
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
     z-index: -1;
 }
 
-/* Content styling */
 .content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    position: relative;
-    z-index: 1;
+    text-align: center;
+    padding: 50px;
 }
 
-/* Text and buttons container styling */
 .text-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-left: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    display: inline-block;
 }
 
-/* Heading styling */
 h1 {
-    color: black;
+    font-size: 2.5em;
     margin-bottom: 20px;
 }
 
-/* Button styling */
-button {
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-    margin: 5px;
-}
-
-button:hover {
-    background-color: #0056b3;
+h2 {
+    font-size: 1.5em;
+    margin-top: 20px;
 }
 
 .flappy_bird {
-    height: 240px; /* Increased height */
-    width: 320px;  /* Increased width */
-    transform: rotate(315deg); /* Tilt 45 degrees */
-    margin: 20px 0; /* Space around the image */
+    width: 180px;
+    height: 140px;
+    margin: 20px 0;
+    transform: rotate(-45deg); /* Adjust the angle as needed */
+}
+
+.buttons {
+    margin-top: 20px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 15px 32px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-family: 'Minecraftia', Arial, sans-serif;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.git_display {
+    margin-top: 20px;
+    font-size: 0.9em;
+}
+
+.git_display a {
+    color: #0000EE;
+    text-decoration: none;
+}
+
+.git_display a:hover {
+    text-decoration: underline;
 }
