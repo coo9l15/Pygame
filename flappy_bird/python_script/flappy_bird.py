@@ -185,10 +185,10 @@ class FlappyBirdGame:
                     if self.essentials.delete_button.collidepoint(event.pos):
                         # Delete the stats file
                         try:
-                            with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"), "w") as file:
+                            with open(os.path.join(self.essentials.base_path, "..", "python_script", "scores.txt"), "w") as file:
                                 file.write("")
                         except FileNotFoundError:
-                            os.mkdir(os.path.join(self.essentials.base_path, "../python_script/scores.txt"))
+                            os.mkdir(os.path.join(self.essentials.base_path, "..", "python_script","scores.txt"))
                         return  # Exit the function after deleting the file
                     elif self.essentials.home_button.collidepoint(event.pos):
                         return  # Exit the function to return to the home screen
@@ -199,36 +199,22 @@ class FlappyBirdGame:
     def show_stats(self):
         self.essentials.screen.fill((0, 0, 0))  # Clear the screen
         try:
-            with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"), "r") as file:
-                stats = int(file.readlines()).sort(reverse=True)
-        except (FileNotFoundError) as e:
-            os.mkdir(os.path.join(self.essentials.base_path, "../python_script/scores.txt"))
-            while True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    elif event.type == pygame.MOUSEBUTTONDOWN:
-                        pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
-                        mouse_pos = pygame.mouse.get_pos()
-                        if self.essentials.button.collidepoint(mouse_pos):
-                            self.home()
-                pygame.display.flip()
-                self.essentials.clock.tick(60)
-    
+            with open(os.path.join(self.essentials.base_path, "..", "python_script", "scores.txt"), "r") as file:
+                # Read all lines, strip whitespace, and sort in reverse order
+                stats = sorted([line.strip() for line in file.readlines()], reverse=True)
+        except FileNotFoundError:
+            os.mkdir(os.path.join(self.essentials.base_path, "..", "python_script", "scores.txt"))
+            stats = []
+
         if not stats:
             no_stats_text = self.essentials.font.render("No stats available", True, (255, 255, 255))
             return_text = self.essentials.font.render("Return", True, (255, 255, 255))
             self.essentials.screen.blit(no_stats_text, (50, 50))
 
-            # Get the rectangle of the button image
             button_img = self.essentials.images["try_again_button"]
             button_rect = button_img.get_rect(center=self.essentials.button.center)
-
-            # Get the rectangle of the return_text and center it within the button image rectangle
             return_text_rect = return_text.get_rect(center=button_rect.center)
 
-            # Blit the button image and the return_text onto the screen
             self.essentials.screen.blit(button_img, button_rect.topleft)
             self.essentials.screen.blit(return_text, return_text_rect)
             while True:
@@ -243,32 +229,31 @@ class FlappyBirdGame:
                             self.home()
                 pygame.display.flip()
                 self.essentials.clock.tick(60)
-    
+
         current_index = 0
         limit = len(stats)
-    
+
         try_again_button = self.essentials.images["try_again_button"]
         next_arrow = self.essentials.images["next"]
         back_arrow = pygame.transform.rotate(next_arrow, 180)
-    
+
         button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
         button_y = self.essentials.screen_height // 2 + 100
         self.essentials.button = pygame.Rect(button_x, button_y, try_again_button.get_width(), try_again_button.get_height())
-    
+
         next_arrow_x = self.essentials.screen_width - next_arrow.get_width() - 50
         next_arrow_y = self.essentials.screen_height - next_arrow.get_height() - 50
         next_arrow_rect = pygame.Rect(next_arrow_x, next_arrow_y, next_arrow.get_width(), next_arrow.get_height())
-    
+
         back_arrow_x = 50
         back_arrow_y = self.essentials.screen_height - back_arrow.get_height() - 50
         back_arrow_rect = pygame.Rect(back_arrow_x, back_arrow_y, back_arrow.get_width(), back_arrow.get_height())
-    
-        # Render the "Return" text
+
         return_text = self.essentials.font.render("Return", True, (255, 255, 255))
         next_text = self.essentials.font.render("Next Stat", True, (255, 255, 255))
         prev_text = self.essentials.font.render("Previous Stat", True, (255, 255, 255))
         return_text_rect = return_text.get_rect(center=self.essentials.button.center)
-    
+
         self.essentials.screen.blit(try_again_button, (button_x, button_y))
         self.essentials.screen.blit(return_text, return_text_rect)
         if current_index < limit - 1:
@@ -277,15 +262,14 @@ class FlappyBirdGame:
         if current_index > 0:
             self.essentials.screen.blit(prev_text, (back_arrow_x, back_arrow_y + 100))
             self.essentials.screen.blit(back_arrow, (back_arrow_x, back_arrow_y))
-    
+
         while True:
             self.essentials.screen.fill((0, 0, 0))  # Clear the screen
             stats_text = self.essentials.font.render(f"Stats {current_index + 1}/{limit}", True, (255, 255, 255))
-            score_text = self.essentials.font.render(f"Score: {stats[current_index]}", True, (255, 255, 255))
+            score_text = self.essentials.font.render(f"Score: {stats[current_index].strip()}", True, (255, 255, 255))
             self.essentials.screen.blit(stats_text, (50, 50))
             self.essentials.screen.blit(score_text, (50, 150))
-    
-            # Draw the buttons on the screen
+
             self.essentials.screen.blit(try_again_button, (self.essentials.button.x, self.essentials.button.y))
             self.essentials.screen.blit(return_text, return_text_rect)
             if current_index < limit - 1:
@@ -298,7 +282,7 @@ class FlappyBirdGame:
                 prev_text = self.essentials.font.render("Previous", True, (255, 255, 255))
                 prev_text_rect = prev_text.get_rect(center=(back_arrow_x + back_arrow.get_width() // 2, back_arrow_y - 20))
                 self.essentials.screen.blit(prev_text, prev_text_rect)
-    
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -312,17 +296,16 @@ class FlappyBirdGame:
                         current_index += 1
                     elif back_arrow_rect.collidepoint(mouse_pos) and current_index > 0:
                         current_index -= 1
-    
+
             pygame.display.flip()
             self.essentials.clock.tick(60)
-
     def end_game(self):
         # Load or initialize stats
         try:
-            with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"),"r") as file:
+            with open(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"),"r") as file:
                 stats = file.readlines()
         except (FileNotFoundError):
-            os.mkdir(os.path.join(self.essentials.base_path, "../python_script/scores.txt"))
+            os.mkdir(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"))
             stats = {}
 
         # Update stats with the new score
@@ -330,7 +313,7 @@ class FlappyBirdGame:
         stats.update(new_entry)
 
         # Save updated stats
-        with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"),"r") as file:
+        with open(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"),"r") as file:
             file.write(stats)
         # Draw end game screen
         self.essentials.screen.fill((0, 0, 0))  # Black background
@@ -436,11 +419,11 @@ class FlappyBirdGame:
 
     def end_game(self):
         try:
-            with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"),"r") as file:
+            with open(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"),"r") as file:
                 stats = file.readlines()
         except FileNotFoundError:
             stats = {}
-        with open(os.path.join(self.essentials.base_path, "../python_script/scores.txt"),"w") as file:
+        with open(os.path.join(self.essentials.base_path, "..","python_script/","scores.txt"),"w") as file:
             stats.append(str(self.score) + "\n")
             file.writelines(stats)
         self.essentials.screen.fill((0, 0, 0))
