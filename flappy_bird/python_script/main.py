@@ -42,7 +42,6 @@ class Pipe:
         bottom_pipe_pos = (self.x, self.bottom_y)
         return (self.mask_top, top_pipe_pos), (self.mask_bottom, bottom_pipe_pos)
 
-
 class Essentials:
     def __init__(self):
         pygame.init()
@@ -62,7 +61,7 @@ class Essentials:
             "background": {"path": os.path.join(self.base_path, "../images/background.jpg"), "width": self.screen_width + 10, "height": self.screen_height},
             "font": {"path": os.path.join(self.base_path, "../images/minecraftia/Minecraftia-Regular.ttf")},
             "try_again_button": {"path": os.path.join(self.base_path, "../images/try_again_button.png"), "width": 500, "height": 300},
-            "pipes": {"path": os.path.join(self.base_path, "../images/pipes.png"), "width": 200, "height": 800},
+            "pipes": {"path": os.path.join(self.base_path, "../images/pipes.png"), "width": 150, "height": 800},
             "next": {"path": os.path.join(self.base_path, "../images/next.png"), "width": 400, "height": 400}
         }
 
@@ -102,7 +101,7 @@ class FlappyBirdGame:
         self.pipes = []
         self.pipe_interval = 1500  # Time interval between pipe generations in milliseconds
         self.last_pipe_time = pygame.time.get_ticks()
-        self.gap_height = 200  # Gap between top and bottom pipes
+        self.gap_height = 250  # Gap between top and bottom pipes
         self.pipe_speed = 5  # Speed at which pipes move left
         self.jump_cooldown = 0  # Cooldown timer to control jump frequency
         self.score = 0
