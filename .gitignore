@@ -1,13 +1,5 @@
-# Ignore Python bytecode
-*.pyc
-__pycache__/
+*
 
-# Ignore virtual environment directory
-.venv/
-
-# Ignore macOS-specific files
-.DS_Store
-
-# Ignore log files
-*.log
-flappy_bird/python_script/essentials.py
+!flappy_bird/python_script
+!flappy_bird/images
+!flappy_bird/sounds

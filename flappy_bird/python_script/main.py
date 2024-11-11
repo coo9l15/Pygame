@@ -2,6 +2,7 @@ import threading
 import pygame
 import random
 import sys
+from pathlib import Path
 import os
 
 """
@@ -45,56 +46,84 @@ class Pipe:
 class Essentials:
     def __init__(self):
         pygame.init()
+        self.running = True
         self.screen_width = 1400
         self.screen_height = 850
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Flappy Bird")
-        # Define the base path
-        self.base_path = os.path.dirname(os.path.abspath(__file__))
-        pygame.display.set_icon(pygame.image.load(os.path.join(self.base_path, "../images/flappy_bird.png")))
-        self.clock = pygame.time.Clock()
-        self.running = True
-        
-        # Dictionary to hold image paths and dimensions
+        self.font = pygame.font.Font("images/minecraftia/Minecraftia-Regular.ttf", 50)
+
+        # Set up image and sound paths relative to the application's path
         self.image_configs = {
-            "flappy_bird": {"path": os.path.join(self.base_path, "../images/flappy_bird.png"), "width": 160, "height": 120},
-            "background": {"path": os.path.join(self.base_path, "../images/background.jpg"), "width": self.screen_width + 10, "height": self.screen_height},
-            "font": {"path": os.path.join(self.base_path, "../images/minecraftia/Minecraftia-Regular.ttf")},
-            "try_again_button": {"path": os.path.join(self.base_path, "../images/try_again_button.png"), "width": 500, "height": 300},
-            "pipes": {"path": os.path.join(self.base_path, "../images/pipes.png"), "width": 150, "height": 800},
-            "next": {"path": os.path.join(self.base_path, "../images/next.png"), "width": 400, "height": 400}
+            "background": {"path":  "images/background.jpg", "width": self.screen_width + 50, "height": self.screen_height},
+            "flappy_bird": {"path":  "images/flappy_bird.png", "width": 160, "height": 120},
+            "try_again_button": {"path":  "images/try_again_button.png", "width": 500, "height": 300},
+            "pipes": {"path":  "images/pipes.png", "width": 150, "height": 800},
+            "next": {"path":  "images/next.png", "width": 400, "height": 400}
         }
 
-        self.mp3s = {
-            "background": os.path.join(self.base_path, "../sounds/background.mp3"),
-            "jump": os.path.join(self.base_path, "../sounds/jump.wav"),
-            "click": os.path.join(self.base_path, "../sounds/button_click.wav")
+        self.wavs = {
+            "background":  "sounds/background.wav",
+            "jump":  "sounds/jump.wav",
+            "click":  "sounds/button_click.wav"
         }
+
+        # Handle paths dynamically based on if the app is frozen or running from source
+        self.application_path = self.get_application_path()
 
         self.images = {}
-        self.load_images()
-        
-        # Initialize background scrolling variables and bird's properties
+
+        # Initialize other game properties
         self.flappy_y = self.screen_height // 2
-        self.flappy_angle = 0  # Initialize the angle of the bird˜
+        self.flappy_angle = 0  # Initialize the angle of the bird
         self.bg_x = 0
         self.bg_speed = 0.5
         self.gravity = 0.4  # Gravity value for smooth fall
         self.jump_strength = -9  # Strength of the jump
         self.flappy_velocity = 0  # Velocity of the bird
         self.button = pygame.Rect(self.screen_width // 2 - 100, self.screen_height // 2 + 100, 200, 100)  # Center the button and set its dimensions
+        self.clock = pygame.time.Clock()
+
+        self.load_images()
+        self.load_sounds()
+
+    def get_application_path(self):
+        """Helper function to determine the correct application path depending on whether the app is frozen or not."""
+        if getattr(sys, 'frozen', False):
+            # If running as a bundled executable
+            return os.path.dirname(sys.executable)
+        else:
+            # If running in a normal Python environment
+            return os.path.dirname(os.path.abspath(__file__))
+
+    def get_resource_path(self, path):
+        """Helper function to get the correct path to resources."""
+        base_path = Path(self.application_path)
+        return base_path / path
 
     def load_images(self):
-        # Load images and scale them to the required dimensions
-        for key, config in self.image_configs.items():
-            if key == "font":
-                self.font = pygame.font.Font(config["path"], 60)  # Load the font
-            else:
-                image = pygame.image.load(config["path"])
-                image = pygame.transform.scale(image, (config["width"], config["height"]))
-                self.images[key] = image
+        """Load all images dynamically from the image_configs dictionary."""
+        for image_key, image_config in self.image_configs.items():
+            # Load the image using the specified path
+            image_path = self.get_resource_path(image_config["path"])
+            try:
+                image = pygame.image.load(image_path)
+            except pygame.error as e:
+                print(f"Error loading image '{image_path}': {e}")
 
+                # Handle the error, e.g., exit the program or display an error message
+                sys.exit()
+            image = pygame.transform.scale(image, (image_config["width"], image_config["height"]))
 
+            # Store the processed image in the self.images dictionary
+            self.images[image_key] = image
+
+    def load_sounds(self):
+        """Load sound files."""
+        for key, path in self.wavs.items():
+            sound_path = self.get_resource_path(path)
+            self.wavs[key] = pygame.mixer.Sound(sound_path)
+            
 class FlappyBirdGame:
     def __init__(self):
         self.essentials = Essentials()
@@ -109,14 +138,22 @@ class FlappyBirdGame:
         self.bird_mask = pygame.mask.from_surface(self.essentials.images["flappy_bird"])
         self.next_arrow = pygame.Rect(1000, 800, 100, 100)
         self.return_button = pygame.Rect(self.essentials.screen_width // 2 - 250, 800, 500, 100)
+        pygame.mixer.init()  # Initialize the mixer
+        self.music = True
         threading.Thread(target=self.home_async).start()
 
     def home_async(self):
-        pygame.mixer.init()  # Initialize the mixer
-        pygame.mixer.music.load(self.essentials.mp3s["background"])
-        while True:
-            if not pygame.mixer.music.get_busy():
-                pygame.mixer.music.play()
+        # Load the sound only once
+        background_sound = pygame.mixer.Sound(self.essentials.wavs["background"])
+
+        # Main loop for playing the sound
+        while self.music:
+            # Check if the sound is still playing
+            if not pygame.mixer.get_busy():
+                background_sound.play()
+            # Adding a slight delay to prevent busy waiting
+            pygame.time.delay(100)
+
 
     def reset_game(self):
         # Reset bird position and angle
@@ -177,17 +214,18 @@ class FlappyBirdGame:
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.music = False
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
+                    pygame.mixer.Sound(self.essentials.wavs["click"]).play()
                     if self.essentials.delete_button.collidepoint(event.pos):
                         # Delete the stats file
                         try:
-                            with open(os.path.join(self.essentials.base_path, "..", "python_script", "scores.txt"), "w") as file:
+                            with open("scores.txt", "w") as file:
                                 file.write("")
                         except FileNotFoundError:
-                            os.mkdir(os.path.join(self.essentials.base_path, "..", "python_script","scores.txt"))
+                            os.mkdir("scores.txt")
                         return  # Exit the function after deleting the file
                     elif self.essentials.home_button.collidepoint(event.pos):
                         return  # Exit the function to return to the home screen
@@ -198,11 +236,11 @@ class FlappyBirdGame:
     def show_stats(self):
         self.essentials.screen.fill((0, 0, 0))  # Clear the screen
         try:
-            with open(os.path.join(self.essentials.base_path, "..", "python_script", "scores.txt"), "r") as file:
+            with open("scores.txt", "r") as file:
                 # Read all lines, strip whitespace, and sort in reverse order
                 stats = sorted([line.strip() for line in file.readlines()], reverse=True)
         except FileNotFoundError:
-            os.mkdir(os.path.join(self.essentials.base_path, "..", "python_script", "scores.txt"))
+            os.mkdir("scores.txt")
             stats = []
 
         if not stats:
@@ -222,7 +260,7 @@ class FlappyBirdGame:
                         pygame.quit()
                         sys.exit()
                     elif event.type == pygame.MOUSEBUTTONDOWN:
-                        pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
+                        pygame.mixer.Sound(self.essentials.wavs["click"]).play()
                         mouse_pos = pygame.mouse.get_pos()
                         if self.essentials.button.collidepoint(mouse_pos):
                             self.home()
@@ -287,7 +325,7 @@ class FlappyBirdGame:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
+                    pygame.mixer.Sound(self.essentials.wavs["click"]).play()
                     mouse_pos = pygame.mouse.get_pos()
                     if self.essentials.button.collidepoint(mouse_pos):
                         self.home()
@@ -298,57 +336,9 @@ class FlappyBirdGame:
 
             pygame.display.flip()
             self.essentials.clock.tick(60)
-    def end_game(self):
-        # Load or initialize stats
-        try:
-            with open(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"),"r") as file:
-                stats = file.readlines()
-        except (FileNotFoundError):
-            os.mkdir(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"))
-            stats = {}
-
-        # Update stats with the new score
-        new_entry = {str(len(stats) + 1): self.score}
-        stats.update(new_entry)
-
-        # Save updated stats
-        with open(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"),"r") as file:
-            file.write(stats)
-        # Draw end game screen
-        self.essentials.screen.fill((0, 0, 0))  # Black background
-        final_score = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
-        game_over = self.essentials.font.render("Game Over", True, (255, 255, 255))
-        try_again = self.essentials.font.render("Home", True, (255, 255, 255))
-        try_again_button = self.essentials.images["try_again_button"]
-
-        # Calculate button and text positions
-        button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
-        button_y = self.essentials.screen_height // 2
-        text_x = button_x + (try_again_button.get_width() - try_again.get_width()) // 2
-        text_y = button_y + (try_again_button.get_height() - try_again.get_height()) // 2
-
-        # Blit elements to the screen
-        self.essentials.screen.blit(final_score, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 200))
-        self.essentials.screen.blit(game_over, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 100))
-        self.essentials.screen.blit(try_again_button, (button_x, button_y))
-        self.essentials.screen.blit(try_again, (text_x, text_y))
-
-        # Main loop for end game screen
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.essentials.running = False
-                    return
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
-                    mouse_pos = pygame.mouse.get_pos()
-                    if try_again_button.get_rect(topleft=(button_x, button_y)).collidepoint(mouse_pos):
-                        self.home()
-            pygame.display.flip()
-            self.essentials.clock.tick(60)
-            
+    
     def home(self):
-        scaled_font = pygame.font.Font(self.essentials.image_configs["font"]["path"], 100)
+        scaled_font = pygame.font.Font("images/minecraftia/Minecraftia-Regular.ttf", 100)
         while self.essentials.running:
             self.draw(game=False)
             # Scale the bird image
@@ -404,7 +394,7 @@ class FlappyBirdGame:
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:  # Left mouse button
-                        pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
+                        pygame.mixer.Sound(self.essentials.wavs["click"]).play()
                         mouse_pos = pygame.mouse.get_pos()
                         if self.essentials.run_button.collidepoint(mouse_pos):
                             self.reset_game()
@@ -418,11 +408,12 @@ class FlappyBirdGame:
 
     def end_game(self):
         try:
-            with open(os.path.join(self.essentials.base_path, "..","python_script","scores.txt"),"r") as file:
+            with open("scores.txt", "r") as file:
                 stats = file.readlines()
         except FileNotFoundError:
-            stats = {}
-        with open(os.path.join(self.essentials.base_path, "..","python_script/","scores.txt"),"w") as file:
+            stats = []
+            os.system("touch scores.txt")
+        with open("scores.txt" ,"a") as file:
             stats.append(str(self.score) + "\n")
             file.writelines(stats)
         self.essentials.screen.fill((0, 0, 0))
@@ -449,7 +440,7 @@ class FlappyBirdGame:
                     self.essentials.running = False
                     return
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    pygame.mixer.Sound(self.essentials.mp3s["click"]).play()
+                    pygame.mixer.Sound(self.essentials.wavs["click"]).play()
                     mouse_pos = pygame.mouse.get_pos()
                     if self.essentials.button.collidepoint(mouse_pos):
                         self.home()
@@ -458,7 +449,7 @@ class FlappyBirdGame:
 
     def jump(self):
         if self.jump_cooldown <= 0:
-            pygame.mixer.Sound(self.essentials.mp3s["jump"]).play()
+            pygame.mixer.Sound(self.essentials.wavs["jump"]).play()
             self.essentials.flappy_velocity = self.essentials.jump_strength
             self.jump_cooldown = 10  # Reset cooldown
 

@@ -1,20 +1,20 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='flappy_bird_game',  # Replace with your game name
-    version='1.0.0',
+    name='flappybirdgame',
+    version='0.1.0',
+    description='A Flappy Bird game implemented in Python using Pygame',
+    author='Your Name',
+    author_email='your.email@example.com',
     packages=find_packages(),
-    include_package_data=True,
     install_requires=[
-        'pygame',  # Add other dependencies if needed
+        'pygame',
     ],
-    entry_points={
-        'console_scripts': [
-            'flappy_bird_game=python_script.main:main',  # Entry point to your game
-        ],
-    },
-    package_data={
-        '': ['images/*', 'sounds/*'],  # Include images and sounds in the package
-    },
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.11',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+    ],
+    python_requires='>=3.6',
 )
-
