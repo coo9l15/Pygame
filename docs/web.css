@@ -3,7 +3,6 @@
     src: url('Minecraftia-Regular.ttf?v=1') format('truetype');
 }
 
-
 body {
     font-family: 'Minecraftia', Arial, sans-serif;
     margin: 0;
@@ -12,17 +11,34 @@ body {
 }
 
 .background {
+    background-image: url('background.jpg'); /* Replace with your image path */
+    background-size: cover;
+    background-position: 0 0;
+    background-repeat: repeat-x; /* Repeat horizontally */
     width: 100%;
     height: 100%;
     position: absolute;
     top: 0;
     left: 0;
     z-index: -1;
+    animation: moveBackground 30s linear infinite;
+}
+
+/* Animation to move the background horizontally */
+@keyframes moveBackground {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: -100vw 0; /* Move the background completely offscreen */
+    }
 }
 
 .content {
     text-align: center;
     padding: 50px;
+    position: relative;
+    z-index: 1;
 }
 
 .text-buttons {
@@ -46,7 +62,7 @@ h2 {
     width: 180px;
     height: 140px;
     margin: 20px 0;
-    transform: rotate(-45deg); /* Adjust the angle as needed */
+    transform: rotate(-45deg);
 }
 
 .buttons {
