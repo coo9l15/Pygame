@@ -1,7 +1,8 @@
 @font-face {
     font-family: 'Minecraftia';
-    src: url('Minecraftia-Regular.ttf') format('truetype');
+    src: url('Minecraftia-Regular.ttf?v=1') format('truetype');
 }
+
 
 body {
     font-family: 'Minecraftia', Arial, sans-serif;
