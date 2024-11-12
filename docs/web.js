@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const downloadLinks = {
         Windows: 'docs/flappy_bird_windows.zip',
-        Mac: 'docs/flappy_bird_mac.zip',
+        Mac: 'exe/MacFlappyBird/',
         Linux: 'docs/flappy_bird_linux.zip'
     };
 

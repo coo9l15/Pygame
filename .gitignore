@@ -1,5 +1,16 @@
+# Ignore all files and directories by default
 *
 
-!flappy_bird/python_script
-!flappy_bird/images
-!flappy_bird/sounds
+# Allow the root-level flappy_bird and docs directories to be tracked
+!flappy_bird/
+!docs/
+
+# Include specific subdirectories within flappy_bird
+!flappy_bird/python_script/
+!flappy_bird/images/
+!flappy_bird/sounds/
+
+# Exclude build and distribution directories
+flappy_bird/build/
+flappy_bird/dist/
+docs/exes/
