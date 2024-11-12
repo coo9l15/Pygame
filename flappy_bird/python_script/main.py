@@ -412,25 +412,29 @@ class FlappyBirdGame:
                 stats = file.readlines()
         except FileNotFoundError:
             stats = []
-            os.system("touch scores.txt")
-        with open("scores.txt" ,"a") as file:
-            stats.append(str(self.score) + "\n")
+
+        new_score = str(self.score) + "\n"
+        stats.append(new_score)
+
+        with open("scores.txt", "w") as file:
             file.writelines(stats)
         self.essentials.screen.fill((0, 0, 0))
         final_score = self.essentials.font.render(f"Score: {self.score}", True, (255, 255, 255))
         game_over = self.essentials.font.render("Game Over", True, (255, 255, 255))
         try_again = self.essentials.font.render("Home", True, (255, 255, 255))
+        high_score = self.essentials.font.render(f"High Score: {max(stats)}", True, (255, 255, 255))
         try_again_button = self.essentials.images["try_again_button"]
     
         # Calculate positions
         button_x = self.essentials.screen_width // 2 - try_again_button.get_width() // 2
-        button_y = self.essentials.screen_height // 2
+        button_y = self.essentials.screen_height // 2 + 100
         text_x = button_x + (try_again_button.get_width() - try_again.get_width()) // 2
         text_y = button_y + (try_again_button.get_height() - try_again.get_height()) // 2
     
         # Blit elements to the screen
-        self.essentials.screen.blit(final_score, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 200))
-        self.essentials.screen.blit(game_over, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 100))
+        self.essentials.screen.blit(final_score, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 100))
+        self.essentials.screen.blit(game_over, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2 - 200))
+        self.essentials.screen.blit(high_score, (self.essentials.screen_width // 2 - 150, self.essentials.screen_height // 2))
         self.essentials.screen.blit(try_again_button, (button_x, button_y))
         self.essentials.screen.blit(try_again, (text_x, text_y))
         
